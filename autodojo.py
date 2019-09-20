@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from bs4 import BeautifulSoup as soup
+from config import passw
 import os
 import time
 import re
@@ -36,7 +37,7 @@ class Bot:
         password = self.driver.find_element_by_xpath(
             '//*[@id="reactApplication"]/div/div/div[2]/div/form/div[2]/div/div/input')
         password.click()
-        password.send_keys("J@m1169o")
+        password.send_keys(passw)
         login = self.driver.find_element_by_xpath(
             '//*[@id="reactApplication"]/div/div/div[2]/div/form/button')
         login.click()
