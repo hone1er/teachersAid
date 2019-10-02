@@ -29,17 +29,25 @@ class Bot:
         self.driver.get(
             "https://teach.classdojo.com/#/login?redirect=%2Flaunchpad")
         assert "ClassDojo" in self.driver.title
-        username = WebDriverWait(self.driver, 7).until(
-            EC.presence_of_element_located(
-                (By.XPATH, '//*[@id="reactApplication"]/div/div/div[2]/div/form/div[1]/span/div[1]/div/input')))
+        if self.check_exists_by_xpath('//*[@id="reactApplication"]/div/div[2]/div/form/div[1]/span/div[1]/div/input') == False:
+            username = WebDriverWait(self.driver, 7).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, '//*[@id="reactApplication"]/div/div/div[2]/div/form/div[1]/span/div[1]/div/input')))
+        else:
+            username = WebDriverWait(self.driver, 7).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, '//*[@id="reactApplication"]/div/div[2]/div/form/div[1]/span/div[1]/div/input')))
+                
         username.click()
         username.send_keys("joshuapaz@berkeley.net")
-        password = self.driver.find_element_by_xpath(
-            '//*[@id="reactApplication"]/div/div/div[2]/div/form/div[2]/div/div/input')
+        if self.check_exists_by_xpath('//*[@id="reactApplication"]/div/div[2]/div/form/div[2]/div/div/input') == False:
+            password = self.driver.find_element_by_xpath(
+                '//*[@id="reactApplication"]/div/div/div[2]/div/form/div[2]/div/div/input')
+        else:
+            password = self.driver.find_element_by_xpath('//*[@id="reactApplication"]/div/div[2]/div/form/div[2]/div/div/input')
         password.click()
         password.send_keys(passw)
-        login = self.driver.find_element_by_xpath(
-            '//*[@id="reactApplication"]/div/div/div[2]/div/form/button')
+        login = self.driver.find_element_by_css_selector("button")
         login.click()
         time.sleep(2)
 
@@ -50,13 +58,23 @@ class Bot:
             "//*[contains(text(), 'Period')]")
 
     def go_to_report(self):
-        options = WebDriverWait(self.driver, 7).until(
-            EC.presence_of_element_located(
-                (By.XPATH, '//*[@id="reactApplication"]/div/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/a/div/div[1]')))
+        try:
+
+            options = WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, '//*[@id="reactApplication"]/div/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/a/div/div[1]')))
+        except:
+            options = WebDriverWait(self.driver, 7).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, '//*[@id="reactApplication"]/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/a/div/div[2]/span/span')))
+                     
         options.click()
         time.sleep(1)
-        report = self.driver.find_element_by_xpath(
-            '//*[@id="reactApplication"]/div/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/div/div/div/div/ul/li[2]/div/div[1]')
+        try:
+            report = self.driver.find_element_by_xpath(
+                '//*[@id="reactApplication"]/div/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/div/div/div/div/ul/li[2]/div/div[1]')
+        except:
+            report = self.driver.find_element_by_xpath('//*[@id="reactApplication"]/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/div/div/div/div/ul/li[2]/div/div[1]/span')
         report.click()
         time.sleep(1)
         date = self.driver.find_element_by_xpath(
@@ -98,9 +116,14 @@ class Bot:
 
         spans = bs.findAll('div', {'class': 'css-jpd5x2'})
         for span in spans[1::]:
+        
             result = re.split(r'(\d.*)', span.text)[0:2]
+            print(result)
             name = result[0]
-            score = self.convert_score(int(result[1].strip("%")))
+            try:
+                score = self.convert_score(int(result[1].strip("%")))
+            except:
+                score = 1
             self.scores[name] = score
 
     def convert_score(self, score):
