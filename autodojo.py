@@ -10,10 +10,12 @@ from config import passw
 import os
 import time
 import re
+from popup import Setup
 
 
 class Bot:
     def __init__(self):
+        self.dates_chosen = False
         self.driver = webdriver.Chrome(os.path.join(
             os.path.dirname(__file__), "chrome77/chromedriver"))
         self.scores = {}
@@ -76,12 +78,12 @@ class Bot:
         except:
             report = self.driver.find_element_by_xpath('//*[@id="reactApplication"]/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/div/div/div/div/ul/li[2]/div/div[1]/span')
         report.click()
+
+    def custom_dates(self):
         time.sleep(1)
         date = self.driver.find_element_by_xpath(
             '/html/body/div[2]/div/div/div/div[2]/div/div/div[2]/div/div[2]/div[1]/div/div[1]/span/div/a/div/div[1]')
         date.click()
-
-    def custom_dates(self):
         custom_dates = self.driver.find_element_by_xpath(
             '/html/body/div[2]/div/div/div/div[2]/div/div/div[2]/div/div[2]/div[1]/div/div[1]/span/div/div/div/div/div/ul/li[8]/div/div[1]')
         time.sleep(1)
@@ -103,9 +105,8 @@ class Bot:
         self.date_xpath = True
 
     def choose_dates(self):
-        if input(f"Have you chosen the dates for this period?('y'/'n') ").lower() == 'y':
-            return
-        self.choose_dates()
+        self.dates_chosen = Setup("Custom Dates", "Choose a custom date range then click continue")
+
 
     def get_scores(self):
         print("COLLECTING SCORES")
@@ -115,8 +116,7 @@ class Bot:
         bs = soup(students, "html.parser")
 
         spans = bs.findAll('div', {'class': 'css-jpd5x2'})
-        for span in spans[1::]:
-        
+        for span in spans[1::]:        
             result = re.split(r'(\d.*)', span.text)[0:2]
             print(result)
             name = result[0]
@@ -148,9 +148,7 @@ class Bot:
             "https://berkeley.illuminateed.com/dna/?GradebookSelect")
 
     def logged_in(self):
-        if input("Have you logged-in to illuminateEd?('y'/'n') ").lower() == 'y':
-            return
-        self.logged_in()
+        login = Setup("Login", "Login to IlluminateEd then click continue")
 
     def login_w_google(self):
         google_login = WebDriverWait(self.driver, 7).until(
@@ -204,8 +202,10 @@ if __name__ == '__main__':
         key = periods[i].get_attribute("innerText")[0:9]
         periods[i].click()
         bot.go_to_report()
-        bot.custom_dates()
-        bot.choose_dates()
+        if not bot.dates_chosen:
+            bot.custom_dates()
+            bot.choose_dates()
+        time.sleep(1)
         bot.get_scores()
         bot.score_dict[key] = bot.scores
         bot.return_to_launchpad()
@@ -218,3 +218,11 @@ if __name__ == '__main__':
         bot.score_mode()
         time.sleep(2)
     time.sleep(5000)
+
+
+'''
+When a new assignment is created there is a "data-assignment_id" under context menu 
+or "id"=assn_<id> under the table header. The assigment ID is also used for the table
+data cells to relate the head to the data.
+
+'''
