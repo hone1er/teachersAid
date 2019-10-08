@@ -22,12 +22,12 @@ class Bot:
         self.score_dict = {}
         self.periods = None
         self.date_xpath = None
-        print("INITIALIZING")
+        print("INITIALIZING.....")
         self.urls = {'Period 0': 'https://berkeley.illuminateed.com/dna/?gradebook_id=8742&page=GradebookScoresheet', 'Period 1': 'https://berkeley.illuminateed.com/dna/?gradebook_id=8632&view=scoresheet&page=GradebookScoresheet',
                      'Period 2': 'https://berkeley.illuminateed.com/dna/?gradebook_id=8670&view=scoresheet&page=GradebookScoresheet', 'Period 3': 'https://berkeley.illuminateed.com/dna/?gradebook_id=8744&view=scoresheet&page=GradebookScoresheet', 'Period 5': 'https://berkeley.illuminateed.com/dna/?gradebook_id=8745&view=scoresheet&page=GradebookScoresheet'}
 
     def login(self):
-        print("LOGGING IN")
+        print("LOGGING IN....")
         self.driver.get(
             "https://teach.classdojo.com/#/login?redirect=%2Flaunchpad")
         assert "ClassDojo" in self.driver.title
@@ -39,14 +39,15 @@ class Bot:
             username = WebDriverWait(self.driver, 7).until(
                 EC.presence_of_element_located(
                     (By.XPATH, '//*[@id="reactApplication"]/div/div[2]/div/form/div[1]/span/div[1]/div/input')))
-                
+
         username.click()
         username.send_keys("joshuapaz@berkeley.net")
         if self.check_exists_by_xpath('//*[@id="reactApplication"]/div/div[2]/div/form/div[2]/div/div/input') == False:
             password = self.driver.find_element_by_xpath(
                 '//*[@id="reactApplication"]/div/div/div[2]/div/form/div[2]/div/div/input')
         else:
-            password = self.driver.find_element_by_xpath('//*[@id="reactApplication"]/div/div[2]/div/form/div[2]/div/div/input')
+            password = self.driver.find_element_by_xpath(
+                '//*[@id="reactApplication"]/div/div[2]/div/form/div[2]/div/div/input')
         password.click()
         password.send_keys(passw)
         login = self.driver.find_element_by_css_selector("button")
@@ -54,7 +55,7 @@ class Bot:
         time.sleep(2)
 
     def collect_classes(self):
-        print("FINDING REPORT")
+        print("FINDING REPORT....")
         time.sleep(2)
         self.periods = self.driver.find_elements_by_xpath(
             "//*[contains(text(), 'Period')]")
@@ -69,14 +70,15 @@ class Bot:
             options = WebDriverWait(self.driver, 7).until(
                 EC.presence_of_element_located(
                     (By.XPATH, '//*[@id="reactApplication"]/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/a/div/div[2]/span/span')))
-                     
+
         options.click()
         time.sleep(1)
         try:
             report = self.driver.find_element_by_xpath(
                 '//*[@id="reactApplication"]/div/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/div/div/div/div/ul/li[2]/div/div[1]')
         except:
-            report = self.driver.find_element_by_xpath('//*[@id="reactApplication"]/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/div/div/div/div/ul/li[2]/div/div[1]/span')
+            report = self.driver.find_element_by_xpath(
+                '//*[@id="reactApplication"]/div/div/div/div/div[2]/div[1]/div/div[5]/div/div[3]/span/div/div/div/div/div/ul/li[2]/div/div[1]/span')
         report.click()
 
     def custom_dates(self):
@@ -105,18 +107,18 @@ class Bot:
         self.date_xpath = True
 
     def choose_dates(self):
-        self.dates_chosen = Setup("Custom Dates", "Choose a custom date range then click continue")
-
+        self.dates_chosen = Setup(
+            "Custom Dates", "Choose a custom date range then click continue")
 
     def get_scores(self):
-        print("COLLECTING SCORES")
+        print("COLLECTING SCORES....")
         students = WebDriverWait(self.driver, 7).until(
             EC.presence_of_element_located(
                 (By.XPATH, '/html/body/div[2]/div/div/div/div[2]/div/div/div[1]/div/div[2]'))).get_attribute('innerHTML')
         bs = soup(students, "html.parser")
 
         spans = bs.findAll('div', {'class': 'css-jpd5x2'})
-        for span in spans[1::]:        
+        for span in spans[1::]:
             result = re.split(r'(\d.*)', span.text)[0:2]
             print(result)
             name = result[0]
@@ -176,7 +178,7 @@ class Bot:
             EC.presence_of_element_located(
                 (By.XPATH, '//*[@id="passwordNext"]/span')))
         next_button.click()
-    
+
     def score_mode(self):
         xpath = '//*[@id="canvas"]/form[1]/table[2]/tbody/tr/td[1]/select'
         menu = WebDriverWait(self.driver, 7).until(
@@ -184,11 +186,37 @@ class Bot:
                 (By.XPATH, xpath)))
         for option in menu.find_elements_by_tag_name('option'):
             if option.text == 'Score':
-                option.click() # select() in earlier versions of webdriver
+                option.click()  # select() in earlier versions of webdriver
                 break
 
+    def check_names(self, name):
+        if name == "Gab Barajas Melendez, Pablo Angel":
+            name = "Barajas Melendez, Pablo Angel Gab"
+        elif name == "Minh Toldon, Ochosi":
+            name = "Toldon, Ochosi M"
+        elif name == "Duran Flores, Miguel Angel":
+            name = "Duran Flores, Miguel A"
+        elif name == "Walton IV, Norman":
+            name = "Walton, Norman"
+        elif name == "Marie Howard, Jae":
+            name = "Howard, Jae Marie"
+        elif name == "Olawoye, Feranmi":
+            name = "Olawoye, Oluwabukunmi"
+        else:
+            return name
+        return name
 
-
+    def insert_scores(self, student, assignment_id):
+        name = student[0].encode("utf-8") + " " + student[1].encode("utf-8")
+        name = self.check_names(name)
+        name_cell = self.driver.find_element_by_xpath(
+            '//*[text()[contains(., "{}")]]'.format(name))
+        parent = name_cell.find_element_by_xpath(
+            '..').find_element_by_xpath('..')
+        student_id = parent.get_attribute('student_id')
+        inp = self.driver.find_element_by_id(
+            "score_{}_{}".format(student_id, assignment_id))
+        inp.click()
 
 
 if __name__ == '__main__':
@@ -205,7 +233,7 @@ if __name__ == '__main__':
         if not bot.dates_chosen:
             bot.custom_dates()
             bot.choose_dates()
-        time.sleep(1)
+        time.sleep(1.5)
         bot.get_scores()
         bot.score_dict[key] = bot.scores
         bot.return_to_launchpad()
@@ -214,13 +242,22 @@ if __name__ == '__main__':
     for period, url in bot.urls.items():
         bot.driver.get(url)
         bot.score_mode()
-        image = bot.driver.find_element_by_xpath("//img[contains(@src,'ClassDojo')]")
+        image = bot.driver.find_element_by_xpath(
+            "//img[contains(@src,'ClassDojo')]")
         image_parent = image.find_element_by_xpath('..')
-        assignment_id = image_parent.find_element_by_xpath('..')
-        print(assignment_id.get_attribute('id')[5::])
+        assignment_id = image_parent.find_element_by_xpath(
+            '..').get_attribute('id')[5::]
+        print(period)
         for student, score in bot.score_dict[period].items():
-            print(f"Student: {student}, Score: {score}, Assignment: {assignment_id}")
-            time.sleep(0.5)
+            if len(student.split()) > 3:
+                student = " ".join(
+                    student.split()[2::]) + ",", " ".join(student.split()[0:2])
+            else:
+                student = " ".join(
+                    student.split()[1::]) + ",", student.split()[0]
+            bot.insert_scores(student, assignment_id)
+            print "{} {}: {}".format(student[0].encode(
+                'utf-8'), student[1].encode('utf-8'), score)
     time.sleep(5000)
 
 
