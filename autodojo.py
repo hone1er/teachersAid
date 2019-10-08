@@ -206,6 +206,10 @@ class Bot:
             return name
         return name
 
+    def create_assignment(self):
+        pass
+
+
     def insert_scores(self, student, assignment_id):
         name = student[0].encode("utf-8") + " " + student[1].encode("utf-8")
         name = self.check_names(name)
