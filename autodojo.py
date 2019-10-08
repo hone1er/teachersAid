@@ -23,8 +23,8 @@ class Bot:
         self.periods = None
         self.date_xpath = None
         print("INITIALIZING")
-        self.urls = ['https://berkeley.illuminateed.com/dna/?gradebook_id=8742&page=GradebookScoresheet', 'https://berkeley.illuminateed.com/dna/?gradebook_id=8632&view=scoresheet&page=GradebookScoresheet',
-                     'https://berkeley.illuminateed.com/dna/?gradebook_id=8670&view=scoresheet&page=GradebookScoresheet', 'https://berkeley.illuminateed.com/dna/?gradebook_id=8744&view=scoresheet&page=GradebookScoresheet', 'https://berkeley.illuminateed.com/dna/?gradebook_id=8745&view=scoresheet&page=GradebookScoresheet']
+        self.urls = {'Period 0': 'https://berkeley.illuminateed.com/dna/?gradebook_id=8742&page=GradebookScoresheet', 'Period 1': 'https://berkeley.illuminateed.com/dna/?gradebook_id=8632&view=scoresheet&page=GradebookScoresheet',
+                     'Period 2': 'https://berkeley.illuminateed.com/dna/?gradebook_id=8670&view=scoresheet&page=GradebookScoresheet', 'Period 3': 'https://berkeley.illuminateed.com/dna/?gradebook_id=8744&view=scoresheet&page=GradebookScoresheet', 'Period 5': 'https://berkeley.illuminateed.com/dna/?gradebook_id=8745&view=scoresheet&page=GradebookScoresheet'}
 
     def login(self):
         print("LOGGING IN")
@@ -199,7 +199,7 @@ if __name__ == '__main__':
         bot.scores = {}
         periods = bot.driver.find_elements_by_xpath(
             "//*[contains(text(), 'Period')]")
-        key = periods[i].get_attribute("innerText")[0:9]
+        key = periods[i].get_attribute("innerText")[0:8]
         periods[i].click()
         bot.go_to_report()
         if not bot.dates_chosen:
@@ -209,14 +209,18 @@ if __name__ == '__main__':
         bot.get_scores()
         bot.score_dict[key] = bot.scores
         bot.return_to_launchpad()
-    for k, v in bot.score_dict.items():
-        print(k, v)
     bot.get_illuminateed()
     bot.logged_in()
-    for url in bot.urls:
+    for period, url in bot.urls.items():
         bot.driver.get(url)
         bot.score_mode()
-        time.sleep(2)
+        image = bot.driver.find_element_by_xpath("//img[contains(@src,'ClassDojo')]")
+        image_parent = image.find_element_by_xpath('..')
+        assignment_id = image_parent.find_element_by_xpath('..')
+        print(assignment_id.get_attribute('id')[5::])
+        for student, score in bot.score_dict[period].items():
+            print(f"Student: {student}, Score: {score}, Assignment: {assignment_id}")
+            time.sleep(0.5)
     time.sleep(5000)
 
 
@@ -225,4 +229,5 @@ When a new assignment is created there is a "data-assignment_id" under context m
 or "id"=assn_<id> under the table header. The assigment ID is also used for the table
 data cells to relate the head to the data.
 
+go to <tr> containing student name, find <input> with assignment_id, enter score
 '''
