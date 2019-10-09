@@ -4,7 +4,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, UnexpectedAlertPresentException
+from selenium.webdriver.common.action_chains import ActionChains
 from bs4 import BeautifulSoup as soup
 from config import passw
 import os
@@ -15,6 +16,8 @@ from popup import Setup
 
 class Bot:
     def __init__(self):
+        self.assignment_name = None
+        self.assignment_date = None
         self.dates_chosen = False
         self.driver = webdriver.Chrome(os.path.join(
             os.path.dirname(__file__), "chrome77/chromedriver"))
@@ -92,12 +95,6 @@ class Bot:
         custom_dates.click()
         time.sleep(1)
 
-    def last_week(self):
-        last_week = self.driver.find_element_by_xpath(
-            '/html/body/div[2]/div/div/div/div[2]/div/div/div[2]/div/div[2]/div[1]/div/div[1]/span/div/div/div/div/div/ul/li[8]/div/div[1]')
-        time.sleep(1)
-        last_week.click()
-        time.sleep(1)
 
     def check_exists_by_xpath(self, xpath):
         try:
@@ -115,6 +112,7 @@ class Bot:
         students = WebDriverWait(self.driver, 7).until(
             EC.presence_of_element_located(
                 (By.XPATH, '/html/body/div[2]/div/div/div/div[2]/div/div/div[1]/div/div[2]'))).get_attribute('innerHTML')
+        time.sleep(2)
         bs = soup(students, "html.parser")
 
         spans = bs.findAll('div', {'class': 'css-jpd5x2'})
@@ -152,33 +150,6 @@ class Bot:
     def logged_in(self):
         login = Setup("Login", "Login to IlluminateEd then click continue")
 
-    def login_w_google(self):
-        google_login = WebDriverWait(self.driver, 7).until(
-            EC.presence_of_element_located(
-                (By.XPATH, ('//*[@id="google-login-button"]'))))
-        google_login.click()
-
-    def enter_email(self):
-        email = WebDriverWait(self.driver, 7).until(
-            EC.presence_of_element_located(
-                (By.XPATH, '//*[@id="identifierId"]')))
-        email.click()
-        email.send_keys("joshuapaz@berkeley.net")
-        next_button = WebDriverWait(self.driver, 7).until(
-            EC.presence_of_element_located(
-                (By.XPATH, '//*[@id="identifierNext"]/span')))
-        next_button.click()
-
-    def enter_password(self):
-        password = WebDriverWait(self.driver, 27).until(
-            EC.presence_of_element_located(
-                (By.XPATH, '//*[@id="password"]/div[1]/div/div[1]/input')))
-        password.send_keys("J@m1169o")
-        next_button = WebDriverWait(self.driver, 7).until(
-            EC.presence_of_element_located(
-                (By.XPATH, '//*[@id="passwordNext"]/span')))
-        next_button.click()
-
     def score_mode(self):
         xpath = '//*[@id="canvas"]/form[1]/table[2]/tbody/tr/td[1]/select'
         menu = WebDriverWait(self.driver, 7).until(
@@ -206,11 +177,52 @@ class Bot:
             return name
         return name
 
+    def get_inputs(self):
+        name = raw_input("What is the short name? ")
+        self.assignment_name = name
+        date_input = raw_input("What is the assigned date?(mm/dd/yyyy) ")
+        self.assignment_date = date_input
+
     def create_assignment(self):
-        pass
+        create_xpath =  WebDriverWait(self.driver, 7).until(
+            EC.presence_of_element_located(
+                (By.XPATH,("//*[contains(text(), 'Create Assignment')]"))))
+        create_xpath.click()
+        short_name = WebDriverWait(self.driver, 7).until(
+            EC.presence_of_element_located(
+                (By.XPATH, '//*[@id="short_name"]')))
+        name = self.assignment_name
+        short_name.send_keys(name)
+        actions = ActionChains(self.driver) 
+        actions.send_keys(Keys.TAB * 3)
+        actions.send_keys("Classwork")
+        actions.send_keys(Keys.RETURN)
+        actions.perform()
+        date = self.driver.find_element_by_xpath('//*[@id="assign_date"]')
+        date.click()
+        date_input = self.assignment_date
+        date.send_keys(date_input)
+        possible_points = self.driver.find_element_by_xpath('//*[@id="possible_points"]')
+        possible_points.click()
+        possible_points.send_keys("11")
+        possible_score = self.driver.find_element_by_xpath('//*[@id="possible_score"]')
+        possible_score.click()
+        possible_score.send_keys("4")
+        actions = ActionChains(self.driver) 
+        actions.send_keys(Keys.TAB * 4)
+        actions.send_keys("P0 H")
+        actions.send_keys(Keys.RETURN)
+        actions.send_keys("P1 H")
+        actions.send_keys(Keys.RETURN)
+        actions.send_keys("P2 H")
+        actions.send_keys(Keys.RETURN)
+        actions.send_keys("P5 H")
+        actions.send_keys(Keys.RETURN)
+        actions.perform()
+        save = self.driver.find_element_by_xpath('//*[@id="save"]')
+        save.click()
 
-
-    def insert_scores(self, student, assignment_id):
+    def insert_scores(self, student, score, assignment_id):
         name = student[0].encode("utf-8") + " " + student[1].encode("utf-8")
         name = self.check_names(name)
         name_cell = self.driver.find_element_by_xpath(
@@ -221,6 +233,8 @@ class Bot:
         inp = self.driver.find_element_by_id(
             "score_{}_{}".format(student_id, assignment_id))
         inp.click()
+        inp.send_keys(score)
+
 
 
 if __name__ == '__main__':
@@ -237,7 +251,7 @@ if __name__ == '__main__':
         if not bot.dates_chosen:
             bot.custom_dates()
             bot.choose_dates()
-        time.sleep(1.5)
+        time.sleep(1)
         bot.get_scores()
         bot.score_dict[key] = bot.scores
         bot.return_to_launchpad()
@@ -245,13 +259,17 @@ if __name__ == '__main__':
     bot.logged_in()
     for period, url in bot.urls.items():
         bot.driver.get(url)
+        if bot.assignment_date == None or bot.assignment_name == None:
+            bot.get_inputs()
+            bot.create_assignment()
         bot.score_mode()
         image = bot.driver.find_element_by_xpath(
-            "//img[contains(@src,'ClassDojo')]")
+            "//img[contains(@src, '{}')]".format("+".join(bot.assignment_name.split())))
         image_parent = image.find_element_by_xpath('..')
         assignment_id = image_parent.find_element_by_xpath(
             '..').get_attribute('id')[5::]
         print(period)
+        count = 0 
         for student, score in bot.score_dict[period].items():
             if len(student.split()) > 3:
                 student = " ".join(
@@ -259,9 +277,15 @@ if __name__ == '__main__':
             else:
                 student = " ".join(
                     student.split()[1::]) + ",", student.split()[0]
-            bot.insert_scores(student, assignment_id)
-            print "{} {}: {}".format(student[0].encode(
-                'utf-8'), student[1].encode('utf-8'), score)
+            bot.insert_scores(student, str(score), assignment_id)
+            if count >= len(bot.score_dict[period].items())-2:
+                time.sleep(4)
+            else:
+                time.sleep(1)
+            count += 1
+            
+            
+        print "{} Complete".format(period)
     time.sleep(5000)
 
 

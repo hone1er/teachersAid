@@ -44,9 +44,9 @@ class LoginFrame(Frame):
     def __init__(self):   
         self.master = tk.Tk()
         tk.Label(self.master, 
-                text="First Name").grid(row=0)
+                text="Short Name").grid(row=0)
         tk.Label(self.master, 
-                text="Last Name").grid(row=1)
+                text="Assign Date").grid(row=1)
 
         self.e1 = tk.Entry(self.master)
         self.e2 = tk.Entry(self.master)
